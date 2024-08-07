@@ -7,11 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2E7C74FD2C6400EC00F1F97E /* Main_Pic.svg in Resources */ = {isa = PBXBuildFile; fileRef = 2EF4D4842C6335E6003FFEC4 /* Main_Pic.svg */; };
 		2E926A882C5B5F310042F3E0 /* pocus_appApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E926A872C5B5F310042F3E0 /* pocus_appApp.swift */; };
 		2E926A8C2C5B5F340042F3E0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2E926A8B2C5B5F340042F3E0 /* Assets.xcassets */; };
 		2E926A8F2C5B5F340042F3E0 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2E926A8E2C5B5F340042F3E0 /* Preview Assets.xcassets */; };
 		2E926A982C5B72770042F3E0 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E926A892C5B5F310042F3E0 /* HomeView.swift */; };
 		2E926A9C2C5B742D0042F3E0 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E926A9B2C5B742D0042F3E0 /* SettingsView.swift */; };
+		2EF4D47C2C633237003FFEC4 /* SVGKit in Frameworks */ = {isa = PBXBuildFile; productRef = 2EF4D47B2C633237003FFEC4 /* SVGKit */; };
+		2EF4D47E2C633237003FFEC4 /* SVGKitSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 2EF4D47D2C633237003FFEC4 /* SVGKitSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,6 +24,7 @@
 		2E926A8B2C5B5F340042F3E0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2E926A8E2C5B5F340042F3E0 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		2E926A9B2C5B742D0042F3E0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		2EF4D4842C6335E6003FFEC4 /* Main_Pic.svg */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Main_Pic.svg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -28,6 +32,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2EF4D47E2C633237003FFEC4 /* SVGKitSwift in Frameworks */,
+				2EF4D47C2C633237003FFEC4 /* SVGKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,6 +59,7 @@
 		2E926A862C5B5F300042F3E0 /* pocus-app */ = {
 			isa = PBXGroup;
 			children = (
+				2EF4D4812C6334E3003FFEC4 /* Resources */,
 				2E926A8D2C5B5F340042F3E0 /* Preview Content */,
 				2E926A972C5B5FF90042F3E0 /* View */,
 				2E926A962C5B5FEA0042F3E0 /* ViewModels */,
@@ -94,6 +101,14 @@
 			path = View;
 			sourceTree = "<group>";
 		};
+		2EF4D4812C6334E3003FFEC4 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				2EF4D4842C6335E6003FFEC4 /* Main_Pic.svg */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -110,6 +125,10 @@
 			dependencies = (
 			);
 			name = "pocus-app";
+			packageProductDependencies = (
+				2EF4D47B2C633237003FFEC4 /* SVGKit */,
+				2EF4D47D2C633237003FFEC4 /* SVGKitSwift */,
+			);
 			productName = "pocus-app";
 			productReference = 2E926A842C5B5F300042F3E0 /* pocus-app.app */;
 			productType = "com.apple.product-type.application";
@@ -138,6 +157,9 @@
 				Base,
 			);
 			mainGroup = 2E926A7B2C5B5F300042F3E0;
+			packageReferences = (
+				2EF4D47A2C633237003FFEC4 /* XCRemoteSwiftPackageReference "SVGKit" */,
+			);
 			productRefGroup = 2E926A852C5B5F300042F3E0 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -154,6 +176,7 @@
 			files = (
 				2E926A8F2C5B5F340042F3E0 /* Preview Assets.xcassets in Resources */,
 				2E926A8C2C5B5F340042F3E0 /* Assets.xcassets in Resources */,
+				2E7C74FD2C6400EC00F1F97E /* Main_Pic.svg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -370,6 +393,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		2EF4D47A2C633237003FFEC4 /* XCRemoteSwiftPackageReference "SVGKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SVGKit/SVGKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2EF4D47B2C633237003FFEC4 /* SVGKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2EF4D47A2C633237003FFEC4 /* XCRemoteSwiftPackageReference "SVGKit" */;
+			productName = SVGKit;
+		};
+		2EF4D47D2C633237003FFEC4 /* SVGKitSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2EF4D47A2C633237003FFEC4 /* XCRemoteSwiftPackageReference "SVGKit" */;
+			productName = SVGKitSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 2E926A7C2C5B5F300042F3E0 /* Project object */;
 }

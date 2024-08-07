@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import SVGKit
 
 struct HomeView: View {
     @State private var initialTimerValue: Int = 1500 // Default 25 minutes in seconds
@@ -15,12 +16,12 @@ struct HomeView: View {
     @State private var isBreak: Bool = false
     @State private var buttonPressCount: Int = 0
     @State private var lastPressTime: Date = Date()
-
+    
     @State private var animateGradient: Bool = false
     
     private let startColor: Color = .black
     private let endColor: Color = .gray
-
+    
     var body: some View {
         NavigationView {
             VStack {
@@ -62,18 +63,15 @@ struct HomeView: View {
                 }
                 
                 Spacer()
-
+                    .padding()
+                Spacer()
+                    .padding()
+                Spacer()
+                // Use SVG for progress indicator
+                SVGView(progress: $progress)
+                    .frame(width: 300, height: 300)
                 ZStack {
-                    Circle()
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 5)
-                        .frame(width: 300, height: 300)
-
-                    Circle()
-                        .trim(from: 0.0, to: progress)
-                        .stroke(Color.green, style: StrokeStyle(lineWidth: 5, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                        .frame(width: 300, height: 300)
-                        .animation(.linear(duration: 1), value: progress)
+                    
 
                     Button(action: {
                         self.handleButtonPress()
@@ -82,11 +80,11 @@ struct HomeView: View {
                             Text(isBreak ? "Break" : "Stay Focused")
                                 .font(.custom("SFProDisplay-Regular", size: 24))
                                 .foregroundColor(.white)
-
+                            
                             Text(timerString(time: isBreak ? breakValue : timerValue))
                                 .font(.custom("SFProDisplay-Regular", size: 24))
                                 .foregroundColor(.white)
-
+                            
                             Text("Round \(currentCycle)")
                                 .font(.custom("SFProDisplay-Regular", size: 16))
                                 .foregroundColor(.white.opacity(0.7))
@@ -96,9 +94,9 @@ struct HomeView: View {
                         .cornerRadius(90)
                     }
                 }
-
+                
                 Spacer()
-
+                
                 HStack {
                     Spacer()
                     Text("Cycles: \(totalCycles)")
@@ -123,12 +121,12 @@ struct HomeView: View {
             }
         }
     }
-
+    
     func handleButtonPress() {
         let currentTime = Date()
         let timeInterval = currentTime.timeIntervalSince(lastPressTime)
         lastPressTime = currentTime
-
+        
         if timeInterval < 0.5 {
             // Double press detected
             if isBreak {
@@ -146,13 +144,13 @@ struct HomeView: View {
             }
         }
     }
-
+    
     func timerString(time: Int) -> String {
         let minutes = time / 60
         let seconds = time % 60
         return String(format: "%02d:%02d", minutes, seconds)
     }
-
+    
     func startTimer() {
         timerRunning = true
         progress = 0.0
@@ -179,7 +177,7 @@ struct HomeView: View {
             }
         }
     }
-
+    
     func endWork() {
         print("End of work period")
         self.stopTimer()
@@ -196,7 +194,7 @@ struct HomeView: View {
             print("All cycles complete")
         }
     }
-
+    
     func endBreak() {
         print("End of break period")
         self.stopTimer()
@@ -214,19 +212,19 @@ struct HomeView: View {
             print("All cycles complete")
         }
     }
-
+    
     func stopTimer() {
         timerRunning = false
         timer?.cancel()
         timer = nil
     }
-
+    
     func resetTimerValues() {
         self.timerValue = initialTimerValue
         self.breakValue = initialBreakValue
         self.currentCycle = 1
     }
-
+    
     func applySettings() {
         self.timerValue = initialTimerValue
         self.breakValue = initialBreakValue
@@ -235,6 +233,35 @@ struct HomeView: View {
         self.timerRunning = false
         self.isBreak = false
         self.stopTimer()  // Ensuring timer is stopped when settings are applied
+    }
+}
+struct SVGView: UIViewRepresentable {
+    @Binding var progress: CGFloat
+
+    func makeUIView(context: Context) -> SVGKFastImageView {
+        let imageView = SVGKFastImageView(frame: CGRect(x: 0, y: 0, width: 300, height: 300))
+        if let svgURL = Bundle.main.url(forResource: "Main_Pic", withExtension: "svg"),
+           let svgImage = SVGKImage(contentsOf: svgURL) {
+            updateStrokes(in: svgImage.caLayerTree)
+            imageView.image = svgImage
+        } else {
+            imageView.backgroundColor = .red // Indicates an issue with loading the SVG
+        }
+        return imageView
+    }
+
+    func updateUIView(_ uiView: SVGKFastImageView, context: Context) {
+        print("Updating UIView opacity to: \(progress)")
+        uiView.layer.opacity = Float(progress)
+    }
+
+    private func updateStrokes(in layer: CALayer) {
+        if let shapeLayer = layer as? CAShapeLayer {
+            shapeLayer.strokeColor = UIColor.white.cgColor
+        }
+        layer.sublayers?.forEach { sublayer in
+            updateStrokes(in: sublayer)
+        }
     }
 }
 
