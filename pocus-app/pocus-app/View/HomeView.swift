@@ -1,5 +1,7 @@
 import SwiftUI
 import Combine
+import FamilyControls
+import ManagedSettings
 
 struct HomeView: View {
     @State private var initialTimerValue: Int = 1500 // Default 25 minutes in seconds
@@ -15,7 +17,12 @@ struct HomeView: View {
     @State private var isBreak: Bool = false
     @State private var buttonPressCount: Int = 0
     @State private var lastPressTime: Date = Date()
+    @State private var store = ManagedSettingsStore()
 
+    // Use FamilyActivitySelection instead of Set<ApplicationToken>
+    @State private var selectedApps = FamilyActivitySelection()
+    @State private var isPickerPresented = false
+    
     @State private var animateGradient: Bool = false
     
     private let startColor: Color = .black
@@ -40,6 +47,7 @@ struct HomeView: View {
                             }
                     }
                 }
+                
                 HStack {
                     VStack(alignment: .leading) {
                         Text("Block Out All")
@@ -106,6 +114,16 @@ struct HomeView: View {
                         .foregroundColor(.white.opacity(0.7))
                         .padding()
                 }
+
+                Button("Select Apps to Block") {
+                    isPickerPresented = true
+                }
+                .familyActivityPicker(isPresented: $isPickerPresented, selection: $selectedApps)
+/*
+                Button("Lock Apps") {
+                    lockApps()
+                }
+ */
             }
             .frame(maxWidth: .infinity)
             .foregroundColor(.black)
@@ -116,10 +134,22 @@ struct HomeView: View {
                     .edgesIgnoringSafeArea(.all)
                     .hueRotation(.degrees(animateGradient ? 45 : 0))
                     .onAppear {
+                        self.requestScreenTimeAuthorization()
                         withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true)) {
                             animateGradient.toggle()
                         }
                     }
+
+            }
+        }
+    }
+
+    func requestScreenTimeAuthorization() {
+        Task {
+            do {
+                try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
+            } catch {
+                print("Screen Time authorization failed: \(error)")
             }
         }
     }
@@ -152,11 +182,26 @@ struct HomeView: View {
         let seconds = time % 60
         return String(format: "%02d:%02d", minutes, seconds)
     }
+  
+    func lockApps() {
+        store.shield.applications = selectedApps.applicationTokens // This locks the selected apps
+    }
+
+    func unlockApps() {
+        store.shield.applications = nil
+    }
 
     func startTimer() {
         timerRunning = true
         progress = 0.0
         let totalTime = isBreak ? breakValue : timerValue
+
+        if isBreak {
+            unlockApps()
+        } else {
+            lockApps()
+        }
+
         timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect().sink { _ in
             if self.isBreak {
                 if self.breakValue > 0 {
@@ -183,35 +228,27 @@ struct HomeView: View {
     func endWork() {
         print("End of work period")
         self.stopTimer()
+        unlockApps()
         if self.currentCycle < self.totalCycles {
             self.isBreak = true
-            self.breakValue = initialBreakValue // Reset break duration
+            self.breakValue = initialBreakValue
             self.startTimer()
         } else {
-            // All cycles are complete
-            self.timerRunning = false
-            self.isBreak = false
-            self.progress = 0.0
             self.resetTimerValues()
-            print("All cycles complete")
         }
     }
 
     func endBreak() {
         print("End of break period")
         self.stopTimer()
+        lockApps()
         self.currentCycle += 1
         if self.currentCycle <= self.totalCycles {
             self.isBreak = false
-            self.timerValue = initialTimerValue // Reset work duration
+            self.timerValue = initialTimerValue
             self.startTimer()
         } else {
-            // All cycles are complete
-            self.timerRunning = false
-            self.isBreak = false
-            self.progress = 0.0
             self.resetTimerValues()
-            print("All cycles complete")
         }
     }
 
@@ -237,6 +274,8 @@ struct HomeView: View {
         self.stopTimer()  // Ensuring timer is stopped when settings are applied
     }
 }
+
+
 
 struct HomeView_Previews: PreviewProvider {
     static var previews: some View {
