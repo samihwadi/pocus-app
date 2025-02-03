@@ -12,6 +12,8 @@
 		2E926A8F2C5B5F340042F3E0 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2E926A8E2C5B5F340042F3E0 /* Preview Assets.xcassets */; };
 		2E926A982C5B72770042F3E0 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E926A892C5B5F310042F3E0 /* HomeView.swift */; };
 		2E926A9C2C5B742D0042F3E0 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E926A9B2C5B742D0042F3E0 /* SettingsView.swift */; };
+		2EF179C02D4F22C900CF0D5E /* AppSetting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EF179BF2D4F22C900CF0D5E /* AppSetting.swift */; };
+		2EF179C22D4F233300CF0D5E /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EF179C12D4F233300CF0D5E /* HomeViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,6 +23,10 @@
 		2E926A8B2C5B5F340042F3E0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2E926A8E2C5B5F340042F3E0 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		2E926A9B2C5B742D0042F3E0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		2EF179BB2D4F0E2A00CF0D5E /* pocus-app.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "pocus-app.entitlements"; sourceTree = "<group>"; };
+		2EF179BC2D4F0E3F00CF0D5E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		2EF179BF2D4F22C900CF0D5E /* AppSetting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppSetting.swift; path = "pocus-app/AppSetting.swift"; sourceTree = SOURCE_ROOT; };
+		2EF179C12D4F233300CF0D5E /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HomeViewModel.swift; path = "pocus-app/HomeViewModel.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -53,6 +59,8 @@
 		2E926A862C5B5F300042F3E0 /* pocus-app */ = {
 			isa = PBXGroup;
 			children = (
+				2EF179BC2D4F0E3F00CF0D5E /* Info.plist */,
+				2EF179BB2D4F0E2A00CF0D5E /* pocus-app.entitlements */,
 				2E926A8D2C5B5F340042F3E0 /* Preview Content */,
 				2E926A972C5B5FF90042F3E0 /* View */,
 				2E926A962C5B5FEA0042F3E0 /* ViewModels */,
@@ -74,6 +82,7 @@
 		2E926A952C5B5FDF0042F3E0 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				2EF179BF2D4F22C900CF0D5E /* AppSetting.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -81,6 +90,7 @@
 		2E926A962C5B5FEA0042F3E0 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				2EF179C12D4F233300CF0D5E /* HomeViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -166,6 +176,8 @@
 			files = (
 				2E926A9C2C5B742D0042F3E0 /* SettingsView.swift in Sources */,
 				2E926A882C5B5F310042F3E0 /* pocus_appApp.swift in Sources */,
+				2EF179C02D4F22C900CF0D5E /* AppSetting.swift in Sources */,
+				2EF179C22D4F233300CF0D5E /* HomeViewModel.swift in Sources */,
 				2E926A982C5B72770042F3E0 /* HomeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -297,11 +309,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "pocus-app/pocus-app.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"pocus-app/Preview Content\"";
+				DEVELOPMENT_TEAM = S22SP7Z33C;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "pocus-app/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Pocus;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -325,11 +341,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "pocus-app/pocus-app.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"pocus-app/Preview Content\"";
+				DEVELOPMENT_TEAM = S22SP7Z33C;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "pocus-app/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Pocus;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

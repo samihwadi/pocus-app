@@ -1,17 +1,16 @@
-//
-//  pocus_appApp.swift
-//  pocus-app
-//
-//  Created by Jessica Morcos  on 2024-08-01.
-//
-
 import SwiftUI
+import FamilyControls
 
 @main
 struct pocus_appApp: App {
+    @StateObject var viewModel = HomeViewModel() // Keep ViewModel alive across views
+
     var body: some Scene {
         WindowGroup {
-            HomeView()
+            HomeView(viewModel: viewModel) // Inject the same ViewModel instance
+                .onAppear {
+                    viewModel.requestScreenTimeAuthorization()
+                }
         }
     }
 }
