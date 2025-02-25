@@ -24,5 +24,7 @@ Perfect for students balancing coursework and projects, or professionals managin
 
 This project is licensed under the [MIT License](LICENSE).
 
-![GritLock Demo](./public/Home.png)
-![GritLock Demo](./public/Home-1.png)
+<div style="display: flex; justify-content: space-between;">
+  <img src="./public/Home.png" alt="GritLock Demo 1" width="48%">
+  <img src="./public/Home-1.png" alt="GritLock Demo 2" width="48%">
+</div>
