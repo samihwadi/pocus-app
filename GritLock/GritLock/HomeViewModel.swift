@@ -16,9 +16,7 @@ class HomeViewModel: ObservableObject {
     private var timer: AnyCancellable?
     private var store = ManagedSettingsStore()
     private var lastPressTime: Date = Date()
-    
-    private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
-    
+
     var timerString: String {
         let time = isBreak ? settings.breakValue : settings.timerValue
         return String(format: "%02d:%02d", time / 60, time % 60)
@@ -34,9 +32,10 @@ class HomeViewModel: ObservableObject {
         currentCycle = 1
         timerRunning = false
 
-        // Ensure apps are unlocked on restart
-        unlockApps()
-        
+        // Restore locked apps
+        loadLockedApps()  
+
+
         // Remove stored timer states to prevent unwanted resume
         UserDefaults.standard.set(false, forKey: "timerRunning")
         UserDefaults.standard.removeObject(forKey: "savedTimerValue")
@@ -45,9 +44,9 @@ class HomeViewModel: ObservableObject {
 
         NotificationCenter.default.addObserver(self, selector: #selector(appMovedToBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(appMovedToForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
+
+        registerBackgroundTask()
     }
-
-
 
     func handleButtonPress() {
         let currentTime = Date()
@@ -81,13 +80,12 @@ class HomeViewModel: ObservableObject {
         }
     }
 
-
     func startTimer() {
         timerRunning = true
         UserDefaults.standard.set(true, forKey: "timerRunning")
-        
-        startBackgroundTask() // Keep app alive in background
-        
+
+        scheduleBackgroundTask() // ✅ Schedule long-running background task
+
         if isBreak {
             unlockApps()
         } else {
@@ -95,33 +93,23 @@ class HomeViewModel: ObservableObject {
         }
 
         timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect().sink { [weak self] _ in
-            guard let self = self else { return }
-            self.updateTimer()
-        }
-    }
-    
-    @objc func appMovedToBackground() {
-        print("App moved to background. Keeping timer active if running.")
-        
-        UserDefaults.standard.set(true, forKey: "appWasBackgrounded") // Mark as backgrounded
-        
-        if timerRunning {
-            UserDefaults.standard.set(settings.timerValue, forKey: "savedTimerValue")
-            UserDefaults.standard.set(settings.breakValue, forKey: "savedBreakValue")
-            UserDefaults.standard.set(isBreak, forKey: "isBreak")
-        }
-        
-        if backgroundTaskID == .invalid && timerRunning {
-            startBackgroundTask()
+            self?.updateTimer()
         }
     }
 
+    @objc func appMovedToBackground() {
+        print("App moved to background. Keeping timer active if running.")
+        UserDefaults.standard.set(true, forKey: "appWasBackgrounded")
+
+        if timerRunning {
+            scheduleBackgroundTask() // ✅ Keep timer running in the background
+        }
+    }
 
     @objc func appMovedToForeground() {
         print("App moved to foreground. Resuming tasks.")
-        endBackgroundTask() // End any lingering background tasks
         if timerRunning {
-            resumeTimer() // Ensure the timer continues running in the foreground
+            resumeTimer()
         }
     }
 
@@ -173,7 +161,7 @@ class HomeViewModel: ObservableObject {
         UserDefaults.standard.set(false, forKey: "timerRunning")
         timer?.cancel()
         timer = nil
-        endBackgroundTask()
+        cancelBackgroundTask()
     }
 
     func resetTimerValues() {
@@ -183,12 +171,30 @@ class HomeViewModel: ObservableObject {
         currentCycle = 1
         stopTimer()
     }
+    func resumeTimer() {
+           guard timerRunning else {
+               print("Timer was not running before restart, not resuming.")
+               return
+           }
+
+           let wasRestarted = !UserDefaults.standard.bool(forKey: "appWasBackgrounded")
+
+           if wasRestarted {
+               print("App was restarted. Timer will not resume automatically.")
+               stopTimer()  // Ensure the timer fully stops
+               return
+           }
+
+           print("Resuming existing timer session...")
+           startTimer()
+       }
 
     func applySettings() {
-        settings.timerValue = settings.initialTimerValue
-        settings.breakValue = settings.initialBreakValue
-        resetTimerValues()
-    }
+           settings.timerValue = settings.initialTimerValue
+           settings.breakValue = settings.initialBreakValue
+           resetTimerValues()
+       }
+   
 
     func lockApps() {
         Task {
@@ -196,53 +202,90 @@ class HomeViewModel: ObservableObject {
                 print("No apps selected for locking.")
                 return
             }
+
+            do {
+                let encodedData = try PropertyListEncoder().encode(Array(selectedApps.applicationTokens))
+                UserDefaults.standard.set(encodedData, forKey: "lockedApps")
+                print("✅ Locked apps saved successfully.")
+            } catch {
+                print("❌ Failed to save locked apps: \(error)")
+            }
+
             store.shield.applications = selectedApps.applicationTokens
-            print("Apps locked successfully.")
+            print("✅ Apps locked successfully.")
         }
     }
 
+
+    
     func unlockApps() {
         Task {
             store.shield.applications = nil
             print("Apps unlocked successfully.")
         }
     }
-
-
-    func resumeTimer() {
-        guard timerRunning else {
-            print("Timer was not running before restart, not resuming.")
+    func loadLockedApps() {
+        guard let savedData = UserDefaults.standard.data(forKey: "lockedApps") else {
+            print("🔍 No locked apps found in storage.")
             return
         }
-        
-        let wasRestarted = !UserDefaults.standard.bool(forKey: "appWasBackgrounded")
-        
-        if wasRestarted {
-            print("App was restarted. Timer will not resume automatically.")
-            stopTimer()  // Ensure the timer fully stops
-            return
-        }
-        
-        print("Resuming existing timer session...")
-        startTimer()
-    }
 
-    
-    // MARK: - Background Task Handling
-    private func startBackgroundTask() {
-        if backgroundTaskID == .invalid {
-            backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "Keep Timer Active") {
-                self.endBackgroundTask()
-            }
-            print("Background task started with ID: \(backgroundTaskID)")
+        do {
+            let tokens = try PropertyListDecoder().decode([ApplicationToken].self, from: savedData)
+
+            // ✅ Correct way to set selectedApps
+            selectedApps = FamilyActivitySelection()
+            selectedApps.applicationTokens = Set(tokens) // ✅ Correct property name
+
+            store.shield.applications = selectedApps.applicationTokens
+            print("✅ Locked apps restored successfully.")
+        } catch {
+            print("❌ Failed to restore locked apps: \(error)")
         }
     }
 
-    private func endBackgroundTask() {
-        if backgroundTaskID != .invalid {
-            UIApplication.shared.endBackgroundTask(backgroundTaskID)
-            print("Background task ended with ID: \(backgroundTaskID)")
-            backgroundTaskID = .invalid
+
+
+
+   
+
+
+    // ✅ Register Background Task
+    private func registerBackgroundTask() {
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: "GritLock.GritLock.timerTask", using: nil) { task in
+            self.handleBackgroundTask(task: task as! BGProcessingTask)
         }
+    }
+
+    // ✅ Schedule Background Task
+    private func scheduleBackgroundTask() {
+        let request = BGProcessingTaskRequest(identifier: "GritLock.GritLock.timerTask")
+        request.requiresNetworkConnectivity = false
+        request.requiresExternalPower = false
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 5 * 60) // Runs every 5 minutes
+
+        do {
+            try BGTaskScheduler.shared.submit(request)
+            print("✅ Background task scheduled successfully")
+        } catch {
+            print("❌ Failed to schedule background task: \(error)")
+        }
+    }
+
+    // ✅ Handle Background Task Execution
+    private func handleBackgroundTask(task: BGProcessingTask) {
+        task.expirationHandler = {
+            print("❌ Background task expired")
+            self.cancelBackgroundTask()
+        }
+
+        startTimer() // Resume timer when background task runs
+        task.setTaskCompleted(success: true)
+    }
+
+    // ✅ Cancel Background Task
+    private func cancelBackgroundTask() {
+        BGTaskScheduler.shared.cancelAllTaskRequests()
+        print("✅ All background tasks canceled")
     }
 }
