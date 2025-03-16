@@ -5,14 +5,22 @@ import ManagedSettings
 import BackgroundTasks
 
 class HomeViewModel: ObservableObject {
+    @Published var selectedApps = FamilyActivitySelection() {
+            didSet {
+                handleSelectionChange()
+            }
+        }
+    @Published var showNoAppsSelectedAlert: Bool = false
+
+    @Published var showGroupSelectionAlert: Bool = false
     @Published var settings = AppSettings()
     @Published var progress: CGFloat = 0.0
     @Published var isBreak: Bool = false
     @Published var currentCycle: Int = 1
     @Published var isPickerPresented: Bool = false
-    @Published var selectedApps = FamilyActivitySelection()
+   
     @Published var timerRunning: Bool = false
-
+    
     private var timer: AnyCancellable?
     private var store = ManagedSettingsStore()
     private var lastPressTime: Date = Date()
@@ -62,6 +70,10 @@ class HomeViewModel: ObservableObject {
             }
         } else {
             if !timerRunning {
+                if selectedApps.applicationTokens.isEmpty {  // 🚨 Check if no apps are selected
+                    showNoAppsSelectedAlert = true  // Show alert instead of starting the timer
+                    return
+                }
                 startTimer()
             } else if isBreak {
                 stopTimer()
@@ -199,35 +211,62 @@ class HomeViewModel: ObservableObject {
     }
 
    
-
-    func lockApps() {
-        Task {
-            guard !selectedApps.applicationTokens.isEmpty else {
-                print("No apps selected for locking.")
+    func handleSelectionChange() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { // ⏳ Delay ensures picker is dismissed
+            if !self.selectedApps.categoryTokens.isEmpty {
+                if !self.showGroupSelectionAlert {  // ✅ Prevents duplicate alerts
+                    self.showGroupSelectionAlert = true
+                }
                 return
             }
 
-            do {
-                let encodedData = try PropertyListEncoder().encode(Array(selectedApps.applicationTokens))
-                UserDefaults.standard.set(encodedData, forKey: "lockedApps")
-                print("✅ Locked apps saved successfully.")
-            } catch {
-                print("❌ Failed to save locked apps: \(error)")
+            // ✅ Prevents locking the same apps multiple times
+            guard self.store.shield.applications != self.selectedApps.applicationTokens else {
+                print("⚠️ Apps are already locked, skipping redundant update.")
+                return
             }
 
-            store.shield.applications = selectedApps.applicationTokens
-            print("✅ Apps locked successfully.")
+            // ✅ Automatically lock apps without repeating unnecessarily
+            self.lockApps()
         }
     }
 
+    func lockApps() {
+            Task {
+                guard !selectedApps.applicationTokens.isEmpty else {
+                    print("No apps selected for locking.")
+                    return
+                }
 
-    
+                DispatchQueue.main.async {
+                    self.store.shield.applications = self.selectedApps.applicationTokens
+                }
+
+                // ✅ Save locked apps to UserDefaults (optional for persistence)
+                do {
+                    let encodedData = try PropertyListEncoder().encode(Array(self.selectedApps.applicationTokens))
+                    UserDefaults.standard.set(encodedData, forKey: "lockedApps")
+                    print("✅ Locked apps saved successfully.")
+                } catch {
+                    print("❌ Failed to save locked apps: \(error)")
+                }
+
+                print("✅ Apps locked successfully.")
+            }
+        }
+
+
+
+
+
+
     func unlockApps() {
         Task {
             store.shield.applications = nil
-            print("Apps unlocked successfully.")
+            print("✅ Apps unlocked successfully.")
         }
     }
+
     func loadLockedApps() {
         guard let savedData = UserDefaults.standard.data(forKey: "lockedApps") else {
             print("🔍 No locked apps found in storage.")
@@ -236,11 +275,8 @@ class HomeViewModel: ObservableObject {
 
         do {
             let tokens = try PropertyListDecoder().decode([ApplicationToken].self, from: savedData)
-
-            // ✅ Correct way to set selectedApps
             selectedApps = FamilyActivitySelection()
-            selectedApps.applicationTokens = Set(tokens) // ✅ Correct property name
-
+            selectedApps.applicationTokens = Set(tokens)
             store.shield.applications = selectedApps.applicationTokens
             print("✅ Locked apps restored successfully.")
         } catch {
