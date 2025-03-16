@@ -86,6 +86,17 @@ struct HomeView: View {
                         .background(Color.clear)
                         .cornerRadius(90)
                     }
+                    .alert(isPresented: $viewModel.showNoAppsSelectedAlert) {
+                        Alert(
+                            title: Text("No Apps Selected"),
+                            message: Text("You have selected 0 apps to lock. Do you want to continue with the session?"),
+                            primaryButton: .default(Text("Continue"), action: {
+                                viewModel.startTimer()  // ✅ Start timer only if user confirms
+                            }),
+                            secondaryButton: .cancel(Text("Cancel"))
+                        )
+                    }
+
                 }
 
                 Spacer()
@@ -95,16 +106,17 @@ struct HomeView: View {
                 }
                 .familyActivityPicker(isPresented: $viewModel.isPickerPresented, selection: $viewModel.selectedApps)
                 .foregroundColor(.white)
+                .alert(isPresented: $viewModel.showGroupSelectionAlert) {
+                    Alert(
+                        title: Text("Group Selection Not Allowed"),
+                        message: Text("Please select individual apps instead of a group."),
+                        dismissButton: .default(Text("OK"))
+                    )
+                }
             }
             .onAppear {
                 viewModel.resumeTimer() // Ensures timer runs even after backgrounding
-           
-               
             }
-            .onDisappear {
-             
-            }
-
             .background(LinearGradient(colors: [startColor, endColor], startPoint: .topLeading, endPoint: .bottomTrailing)
                 .edgesIgnoringSafeArea(.all))
         }
