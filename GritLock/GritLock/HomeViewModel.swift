@@ -70,8 +70,9 @@ class HomeViewModel: ObservableObject {
             }
         } else {
             if !timerRunning {
-                if selectedApps.applicationTokens.isEmpty {  // 🚨 Check if no apps are selected
-                    showNoAppsSelectedAlert = true  // Show alert instead of starting the timer
+                // Check if any selections exist - either apps or categories
+                if selectedApps.applicationTokens.isEmpty && selectedApps.categoryTokens.isEmpty {
+                    showNoAppsSelectedAlert = true
                     return
                 }
                 startTimer()
@@ -212,49 +213,107 @@ class HomeViewModel: ObservableObject {
 
    
     func handleSelectionChange() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { // ⏳ Delay ensures picker is dismissed
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { // Delay ensures picker is dismissed
+            // Handle category tokens if present
             if !self.selectedApps.categoryTokens.isEmpty {
-                if !self.showGroupSelectionAlert {  // ✅ Prevents duplicate alerts
-                    self.showGroupSelectionAlert = true
-                }
+                // Process the category tokens properly
+                self.lockAppsAndCategories()
                 return
             }
 
-            // ✅ Prevents locking the same apps multiple times
+            // Handle only application tokens
             guard self.store.shield.applications != self.selectedApps.applicationTokens else {
                 print("⚠️ Apps are already locked, skipping redundant update.")
                 return
             }
 
-            // ✅ Automatically lock apps without repeating unnecessarily
+            // Lock the selected apps
             self.lockApps()
         }
     }
 
-    func lockApps() {
-            Task {
-                guard !selectedApps.applicationTokens.isEmpty else {
-                    print("No apps selected for locking.")
-                    return
+    func lockAppsAndCategories() {
+        Task {
+            // Lock individual apps
+            DispatchQueue.main.async {
+                // Lock apps
+                self.store.shield.applications = self.selectedApps.applicationTokens
+                
+                // Lock categories using the proper policy approach
+                let categories = self.selectedApps.categoryTokens
+                if !categories.isEmpty {
+                    self.store.shield.applicationCategories = ShieldSettings.ActivityCategoryPolicy.specific(categories, except: Set())
+                    print("✅ Categories locked: \(categories.count)")
                 }
-
-                DispatchQueue.main.async {
-                    self.store.shield.applications = self.selectedApps.applicationTokens
+            }
+            
+            // Save selections for persistence
+            do {
+                // Save app tokens
+                let appData = try PropertyListEncoder().encode(Array(self.selectedApps.applicationTokens))
+                UserDefaults.standard.set(appData, forKey: "lockedApps")
+                
+                // Save category tokens
+                if !self.selectedApps.categoryTokens.isEmpty {
+                    let categoryData = try PropertyListEncoder().encode(Array(self.selectedApps.categoryTokens))
+                    UserDefaults.standard.set(categoryData, forKey: "lockedCategories")
                 }
-
-                // ✅ Save locked apps to UserDefaults (optional for persistence)
-                do {
-                    let encodedData = try PropertyListEncoder().encode(Array(self.selectedApps.applicationTokens))
-                    UserDefaults.standard.set(encodedData, forKey: "lockedApps")
-                    print("✅ Locked apps saved successfully.")
-                } catch {
-                    print("❌ Failed to save locked apps: \(error)")
-                }
-
-                print("✅ Apps locked successfully.")
+                
+                print("✅ Locked apps and categories saved successfully.")
+            } catch {
+                print("❌ Failed to save locked items: \(error)")
             }
         }
+    }
+    
+    func lockApps() {
+        Task {
+            // Check if either individual apps or categories are selected
+            let hasAppSelection = !selectedApps.applicationTokens.isEmpty
+            let hasCategorySelection = !selectedApps.categoryTokens.isEmpty
+            
+            guard hasAppSelection || hasCategorySelection else {
+                print("No apps or categories selected for locking.")
+                return
+            }
 
+            DispatchQueue.main.async {
+                // Lock individual apps if any are selected
+                if hasAppSelection {
+                    self.store.shield.applications = self.selectedApps.applicationTokens
+                    print("✅ Locking \(self.selectedApps.applicationTokens.count) individual apps")
+                }
+                
+                // Lock categories if any are selected
+                if hasCategorySelection {
+                    let categories = self.selectedApps.categoryTokens
+                    self.store.shield.applicationCategories = ShieldSettings.ActivityCategoryPolicy.specific(categories, except: Set())
+                    print("✅ Locking \(categories.count) app categories")
+                }
+            }
+
+            // Save selections to UserDefaults
+            do {
+                // Save app tokens if any exist
+                if hasAppSelection {
+                    let appData = try PropertyListEncoder().encode(Array(self.selectedApps.applicationTokens))
+                    UserDefaults.standard.set(appData, forKey: "lockedApps")
+                }
+                
+                // Save category tokens if any exist
+                if hasCategorySelection {
+                    let categoryData = try PropertyListEncoder().encode(Array(self.selectedApps.categoryTokens))
+                    UserDefaults.standard.set(categoryData, forKey: "lockedCategories")
+                }
+                
+                print("✅ Locked selections saved successfully.")
+            } catch {
+                print("❌ Failed to save locked selections: \(error)")
+            }
+
+            print("✅ Locking completed successfully.")
+        }
+    }
 
 
 
@@ -262,29 +321,47 @@ class HomeViewModel: ObservableObject {
 
     func unlockApps() {
         Task {
+            // Unlock apps
             store.shield.applications = nil
-            print("✅ Apps unlocked successfully.")
+            
+            // Unlock categories
+            store.shield.applicationCategories = nil
+            
+            print("✅ Apps and categories unlocked successfully.")
         }
     }
 
     func loadLockedApps() {
-        guard let savedData = UserDefaults.standard.data(forKey: "lockedApps") else {
-            print("🔍 No locked apps found in storage.")
-            return
+        // Initialize a new selection
+        selectedApps = FamilyActivitySelection()
+        
+        // Load individual apps
+        if let savedData = UserDefaults.standard.data(forKey: "lockedApps") {
+            do {
+                let tokens = try PropertyListDecoder().decode([ApplicationToken].self, from: savedData)
+                selectedApps.applicationTokens = Set(tokens)
+                print("✅ Locked apps restored: \(tokens.count)")
+            } catch {
+                print("❌ Failed to restore locked apps: \(error)")
+            }
         }
-
-        do {
-            let tokens = try PropertyListDecoder().decode([ApplicationToken].self, from: savedData)
-            selectedApps = FamilyActivitySelection()
-            selectedApps.applicationTokens = Set(tokens)
-            store.shield.applications = selectedApps.applicationTokens
-            print("✅ Locked apps restored successfully.")
-        } catch {
-            print("❌ Failed to restore locked apps: \(error)")
+        
+        // Load categories
+        if let savedCategories = UserDefaults.standard.data(forKey: "lockedCategories") {
+            do {
+                let categoryTokens = try PropertyListDecoder().decode([ActivityCategoryToken].self, from: savedCategories)
+                selectedApps.categoryTokens = Set(categoryTokens)
+                print("✅ Locked categories restored: \(categoryTokens.count)")
+            } catch {
+                print("❌ Failed to restore locked categories: \(error)")
+            }
+        }
+        
+        // Apply the shield if we have any selections
+        if !selectedApps.applicationTokens.isEmpty || !selectedApps.categoryTokens.isEmpty {
+            lockAppsAndCategories()
         }
     }
-
-
 
 
    
