@@ -172,28 +172,32 @@ class HomeViewModel: ObservableObject {
         stopTimer()
     }
     func resumeTimer() {
-           guard timerRunning else {
-               print("Timer was not running before restart, not resuming.")
-               return
-           }
+        guard timerRunning else {
+            print("Timer was not running before, not resuming.")
+            return
+        }
+        
+        // Only resume if the app was actually backgrounded.
+        if UserDefaults.standard.bool(forKey: "appWasBackgrounded") {
+            print("Resuming existing timer session...")
+            startTimer()
+        } else {
+            // If the app hasn't been backgrounded (e.g., user navigated to Settings), do nothing.
+            print("App was not backgrounded; timer continues running.")
+        }
+    }
 
-           let wasRestarted = !UserDefaults.standard.bool(forKey: "appWasBackgrounded")
-
-           if wasRestarted {
-               print("App was restarted. Timer will not resume automatically.")
-               stopTimer()  // Ensure the timer fully stops
-               return
-           }
-
-           print("Resuming existing timer session...")
-           startTimer()
-       }
 
     func applySettings() {
-           settings.timerValue = settings.initialTimerValue
-           settings.breakValue = settings.initialBreakValue
-           resetTimerValues()
-       }
+        if !timerRunning {
+            settings.timerValue = settings.initialTimerValue
+            settings.breakValue = settings.initialBreakValue
+            resetTimerValues()
+        } else {
+            print("Timer is running; not applying new settings.")
+        }
+    }
+
    
 
     func lockApps() {

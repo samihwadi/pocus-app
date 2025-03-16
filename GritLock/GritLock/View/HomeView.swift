@@ -23,8 +23,9 @@ struct HomeView: View {
                     }
                     .sheet(isPresented: $showSettings) {
                         SettingsView(timerValue: $viewModel.settings.initialTimerValue,
-                                     breakValue: $viewModel.settings.initialBreakValue,
-                                     totalCycles: $viewModel.settings.totalCycles)
+                                         breakValue: $viewModel.settings.initialBreakValue,
+                                         totalCycles: $viewModel.settings.totalCycles,
+                                         timerRunning: $viewModel.timerRunning)
                             .onDisappear {
                                 viewModel.applySettings()
                             }
