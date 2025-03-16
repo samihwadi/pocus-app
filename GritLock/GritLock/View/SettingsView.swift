@@ -41,8 +41,10 @@ struct SettingsView: View {
             .alert(isPresented: $showAlert) {
                 Alert(
                     title: Text("Timer Running"),
-                    message: Text("Changes will only be applied when the timer is not running.")
-                    
+                    message: Text("Changes will only be applied when the timer is not running."),
+                    dismissButton: .default(Text("Okay"), action: {
+                        dismiss()
+                    })
                 )
             }
         }
